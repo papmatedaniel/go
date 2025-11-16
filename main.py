@@ -1,25 +1,19 @@
 import random
-
+import os
 
 class Tabla:
 
     def __init__(self):
-
-        # self.tabla = [["." for _ in range(10)] for _ in range(10)]
-        self.tabla = [['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'], 
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
-                     ['.', '.', '.', '.', '.', '.', '.', '.', '.', 'X']]
-        self.tabla[9][9] = "X"
+        self.tabla = [["." for _ in range(10)] for _ in range(10)]
+        self.jatekosok = []
+        self.alakzatok = ["X", "O"]
 
     def kiir(self):
         [print(*i) for i in self.tabla]
+
+    def tablafrissites(self):
+        '''Frissíti a tábla állapotát'''
+        print(self.objektumszelektalo("X"))
 
 
     def mellettekord(self, halmaz):
@@ -30,6 +24,7 @@ class Tabla:
             mellettielemek.add((i[0]+1, i[1]))
             mellettielemek.add((i[0]-1, i[1]))
         return mellettielemek
+
 
     def objektumszelektalo(self, karakter):
         lista = self.tabla
@@ -58,8 +53,75 @@ class Tabla:
             if zaszlo2:
                 return objektum_lista  #Vissza adjuk az objektumok listáját(itt már nincs redundáns objektum elem)
 
+    def nevbeker(self) -> str:
+        '''Bekéri a neveket a játékosoktól'''
+        nevek = []
+        while len(nevek) != 2:
+            nev = input("Add meg a neved. (2-7) karakter hosszúságban: ")
+            if nev not in nevek:
+                nevek.append(nev)
+            else:
+                print("EZT MÁR MEGADTAD")
+        return nevek
+
+
+    def letesz(self, alakzat):
+        '''Bábuk letevése'''
+        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
+        ellentet = dict()
+        if alakzat == "X":
+            ellentet["X"] = "O"
+        else:
+            ellentet["O"] = "X"
+
+        while True:
+            elemek = []
+            x, y = map(int, input("Add meg a koordinátákat space-el elválasztva: ").split())
+
+            # ŐR 1: Tartományon kívüli koordináták
+            if not (0 <= x <= 9 and 0 <= y <= 9):
+                print("Túl nagy/kicsi számot adtál meg")
+                continue  # Kezdjük újra a ciklust
+
+            # ŐR 2: A mező már foglalt
+            if self.tabla[y][x] != ".":
+                print("IDE MÁR TETTEK")
+                continue  # Kezdjük újra a ciklust
+
+            # Szomszédok összegyűjtése (ez a logika nem változik)
+            for x_irany, y_irany in iranyok:
+                if (0 <= (x_irany + x) <= 9 and 0 <= (y_irany + y) <= 9):
+                    elemek.append(self.tabla[y + y_irany][x + x_irany])
+
+            # ŐR 3: Öngyilkos lépés ellenőrzése
+            if elemek.count(ellentet[alakzat]) == len(elemek):
+                print("Ez egy öngyilkos lépés, tegyél máshová")
+                continue  # Kezdjük újra a ciklust
+
+            # --- SIKERES ESET ("Happy Path") ---
+            # Ha idáig eljutottunk, a lépés érvényes.
+            self.tabla[y][x] = alakzat
+            break  # Kilépünk a (while True) ciklusból
+
+    def levesz(self):
+        '''Leveszi az élettelen objektumokat'''
+        pass
+
+
+
+
+
+
 
 gotabla = Tabla()
-print(gotabla.kiir())
-print(gotabla.objektumszelektalo("."))
-print(gotabla.objektumszelektalo("X"))
+gotabla.jatekosok = gotabla.nevbeker()
+os.system("clear") | os.system("cls")
+while True:
+    for i in range(2):
+        print(gotabla.jatekosok[i])
+        print(gotabla.kiir())
+        gotabla.letesz(gotabla.alakzatok[i])
+        # os.system("clear") | os.system("cls")
+
+
+
