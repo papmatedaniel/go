@@ -3,20 +3,26 @@ import os
 
 class Tabla:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tabla = [["." for _ in range(10)] for _ in range(10)]
         self.jatekosok = []
         self.alakzatok = ["X", "O"]
 
-    def kiir(self):
-        [print(*i) for i in self.tabla]
+    def kiir(self) -> None:
+        '''Kinyomtatja a tablat'''
+        print(" ", end=" ")
+        for i in range(10):
+            print(i, end=" ")
+        print()
+        for index, elem in enumerate(self.tabla):
+            print(index, *self.tabla[index])
 
-    def tablafrissites(self):
+    def tablafrissites(self) -> None:
         '''Frissíti a tábla állapotát'''
         print(self.objektumszelektalo("X"))
 
 
-    def mellettekord(self, halmaz):
+    def mellettekord(self, halmaz) -> set:
         mellettielemek = set()
         for i in halmaz:
             mellettielemek.add((i[0], i[1]+1))
@@ -102,50 +108,75 @@ class Tabla:
 
             # ŐR 3: Öngyilkos lépés ellenőrzése
             if elemek.count(self.ellentet(alakzat)) == len(elemek):
-                print("Ez egy öngyilkos lépés, tegyél máshová")
-                continue  # Kezdjük újra a ciklust
+                if alakzat == "X":
+                    self.tabla[y][x] = "\033[31m" + alakzat + "\033[0m"
+                else:
+                    self.tabla[y][x] = "\033[34m" + alakzat + "\033[0m"
+                
+
+                if not self.levesz(alakzat):
+                    print("Ez egy öngyilkos lépés, tegyél máshová")
+                    self.tabla[y][x] = "."
+                    continue  # Kezdjük újra a ciklust
 
             # --- SIKERES ESET ("Happy Path") ---
             # Ha idáig eljutottunk, a lépés érvényes.
-            self.tabla[y][x] = alakzat
+            if alakzat == "X":
+                self.tabla[y][x] = "\033[31m" + alakzat + "\033[0m"
+            else:
+                self.tabla[y][x] = "\033[34m" + alakzat + "\033[0m"
             break  # Kilépünk a (while True) ciklusból
 
-    def levesz(self, alakzat):
+    def levesz(self, alakzat) -> bool:
         '''Leveszi az élettelen objektumokat'''
         objektumok = self.objektumszelektalo(self.ellentet(alakzat))
 
         iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
         melletti = dict()
-        for objektum in objektumok:
-            melletti[objektum] = []
-            el = False
+        for index, objektum in enumerate(objektumok):
+            melletti[index] = False
+            zaszlo = False
             for x_irany, y_irany in iranyok:
                 for x, y in objektum:
                     if (0 <= (x_irany + x) <= 9 and 0 <= (y_irany + y) <= 9):
                         if self.tabla[y + y_irany][x + x_irany] == ".":
-                            el = True
+                            melletti[index] = True
+                            zaszlo = True
                             break
+                if zaszlo:
+                    break
+
+        for index, elem in melletti.items():
+            if elem == False:
+                for x, y in objektumok[index]:
+                    self.tabla[y][x] = "."
+                return True
+        return False
+
         
-        
+
+
+def clear():
+    if os.name == "nt":      # Windows
+        os.system("cls")
+    else:                    # Linux, macOS, stb.
+        os.system("clear")
 
 
 
 
+def main():
+    '''Fő játékciklus'''
+    gotabla = Tabla()
+    gotabla.jatekosok = gotabla.nevbeker()
+    clear()
+    while True:
+        for alakzat in gotabla.alakzatok:
+            print(gotabla.jatekosok[gotabla.alakzatok.index(alakzat)])
+            print(gotabla.kiir())
+            gotabla.letesz(alakzat)
+            clear()
 
 
-
-
-
-gotabla = Tabla()
-gotabla.jatekosok = gotabla.nevbeker()
-os.system("clear") | os.system("cls")
-while True:
-    for alakzat in gotabla.alakzatok:
-        print(gotabla.jatekosok[gotabla.alakzatok.index(alakzat)])
-        print(gotabla.kiir())
-        gotabla.letesz(alakzat)
-        gotabla.levesz(alakzat)
-        # os.system("clear") | os.system("cls")
-
-
-
+if __name__ == "__main__":
+    main()
