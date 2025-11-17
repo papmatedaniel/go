@@ -1,5 +1,5 @@
-import random
 import os
+
 
 class Tabla:
 
@@ -7,6 +7,7 @@ class Tabla:
         self.tabla = [["." for _ in range(10)] for _ in range(10)]
         self.jatekosok = []
         self.alakzatok = ["X", "O"]
+        self.iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
 
     def kiir(self) -> None:
         '''Kinyomtatja a tablat'''
@@ -14,29 +15,20 @@ class Tabla:
         for i in range(10):
             print(i, end=" ")
         print()
-        for index, elem in enumerate(self.tabla):
+        for index in range(len(self.tabla)):
             print(index, *self.tabla[index])
 
-    def tablafrissites(self) -> None:
-        '''Frissíti a tábla állapotát'''
-        print(self.objektumszelektalo("X"))
+
+    def mellettekord(self, halmaz: set[tuple[int, int]]) -> set[tuple[int, int]]:
+        '''Vissza adja az objektum melletti elemek koordintáit'''
+        return {(x+xx, y+yy) for xx, yy in self.iranyok for x, y in halmaz if self.tartomany(x+xx, y+yy)}
 
 
-    def mellettekord(self, halmaz) -> set:
-        mellettielemek = set()
-        for i in halmaz:
-            mellettielemek.add((i[0], i[1]+1))
-            mellettielemek.add((i[0], i[1]-1))
-            mellettielemek.add((i[0]+1, i[1]))
-            mellettielemek.add((i[0]-1, i[1]))
-        return mellettielemek
-
-
-    def objektumszelektalo(self, karakter: str) -> list:
-        lista = self.tabla
+    def objektumszelektalo(self, karakter: str) -> list[set[tuple[int, int]]]:
         """A bitmapből kigyűjti az adott objektum koordinátáit, 
         és az objektumok koordinátáit listába rakja"""
-        objektum_lista = []  #Ide rakjuk a különálló objektumok koordinátáit
+        lista = self.tabla
+        objektum_lista: list[set[tuple[int, int]]]  = []  #Ide rakjuk a különálló objektumok koordinátáit
         for y in range(len(lista)):  #Végig iterálunk a filon(y tengely)
             for x in range(len(lista[y])): #Végig iterálunk a file akutális során
                 if lista[y][x] == karakter:  #Ha a bitmap adott karaktere == a keresett karakterrel(0 vagy 1)
@@ -59,40 +51,34 @@ class Tabla:
             if zaszlo2:
                 return objektum_lista  #Vissza adjuk az objektumok listáját(itt már nincs redundáns objektum elem)
 
-    def nevbeker(self) -> str:
+    def nevbeker(self) -> list[str]:
         '''Bekéri a neveket a játékosoktól'''
-        nevek = []
+        nevek: list[str] = []
         while len(nevek) != 2:
             nev = input("Add meg a neved. (2-7) karakter hosszúságban: ")
             if not 2 <= len(nev) <= 7:
                 print("Túl rövid vagy hosszú nevet adtál meg")
                 continue
-            if  nev in nevek:
+            if nev in nevek:
                 print("EZT MÁR MEGADTAD")
                 continue
             nevek.append(nev)
         return nevek
     
-    def ellentet(self, alakzat: str) -> dict:
-        ellentet = dict()
-        if alakzat == "X":
-            ellentet["X"] = "O"
-        else:
-            ellentet["O"] = "X"
-        return ellentet[alakzat]
+    def ellentet(self, alakzat: str) -> str:
+        return "O" if alakzat == "X" else "X"
+    
+    def tartomany(self, x: int, y: int) -> bool:
+        return 0 <= x <= 9 and 0 <= y <= 9
 
 
     def letesz(self, alakzat: str) -> None:
         '''Bábuk letevése'''
-        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
-
-
         while True:
-            elemek = []
             x, y = map(int, input("Add meg a koordinátákat space-el elválasztva: ").split())
 
             # ŐR 1: Tartományon kívüli koordináták
-            if not (0 <= x <= 9 and 0 <= y <= 9):
+            if not self.tartomany(x, y):
                 print("Túl nagy/kicsi számot adtál meg")
                 continue  # Kezdjük újra a ciklust
 
@@ -101,57 +87,21 @@ class Tabla:
                 print("IDE MÁR TETTEK")
                 continue  # Kezdjük újra a ciklust
 
-            # Szomszédok összegyűjtése (ez a logika nem változik)
-            for x_irany, y_irany in iranyok:
-                if (0 <= (x_irany + x) <= 9 and 0 <= (y_irany + y) <= 9):
-                    elemek.append(self.tabla[y + y_irany][x + x_irany])
+        # javítás alatt a függvény
 
-            # ŐR 3: Öngyilkos lépés ellenőrzése
-            if elemek.count(self.ellentet(alakzat)) == len(elemek):
-                if alakzat == "X":
-                    self.tabla[y][x] = "\033[31m" + alakzat + "\033[0m"
-                else:
-                    self.tabla[y][x] = "\033[34m" + alakzat + "\033[0m"
-                
-
-                if not self.levesz(alakzat):
-                    print("Ez egy öngyilkos lépés, tegyél máshová")
-                    self.tabla[y][x] = "."
-                    continue  # Kezdjük újra a ciklust
-
-            # --- SIKERES ESET ("Happy Path") ---
-            # Ha idáig eljutottunk, a lépés érvényes.
-            if alakzat == "X":
-                self.tabla[y][x] = "\033[31m" + alakzat + "\033[0m"
-            else:
-                self.tabla[y][x] = "\033[34m" + alakzat + "\033[0m"
-            break  # Kilépünk a (while True) ciklusból
-
-    def levesz(self, alakzat) -> bool:
+    def levesz(self, alakzat: str) -> bool:
         '''Leveszi az élettelen objektumokat'''
         objektumok = self.objektumszelektalo(self.ellentet(alakzat))
+        volt_levetel = False
+        for objektum in objektumok:
+            szomszedok = self.mellettekord(objektum)
 
-        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
-        melletti = dict()
-        for index, objektum in enumerate(objektumok):
-            melletti[index] = False
-            zaszlo = False
-            for x_irany, y_irany in iranyok:
+            van_mellette = any(self.tabla[y][x] == "." for x, y in szomszedok)
+            if not van_mellette:
                 for x, y in objektum:
-                    if (0 <= (x_irany + x) <= 9 and 0 <= (y_irany + y) <= 9):
-                        if self.tabla[y + y_irany][x + x_irany] == ".":
-                            melletti[index] = True
-                            zaszlo = True
-                            break
-                if zaszlo:
-                    break
-
-        for index, elem in melletti.items():
-            if elem == False:
-                for x, y in objektumok[index]:
                     self.tabla[y][x] = "."
-                return True
-        return False
+                volt_levetel = True
+        return volt_levetel
 
         
 
@@ -175,7 +125,7 @@ def main():
             print(gotabla.jatekosok[gotabla.alakzatok.index(alakzat)])
             print(gotabla.kiir())
             gotabla.letesz(alakzat)
-            clear()
+            # clear()
 
 
 if __name__ == "__main__":
