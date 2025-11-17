@@ -26,7 +26,7 @@ class Tabla:
         return mellettielemek
 
 
-    def objektumszelektalo(self, karakter):
+    def objektumszelektalo(self, karakter: str) -> list:
         lista = self.tabla
         """A bitmapből kigyűjti az adott objektum koordinátáit, 
         és az objektumok koordinátáit listába rakja"""
@@ -58,21 +58,28 @@ class Tabla:
         nevek = []
         while len(nevek) != 2:
             nev = input("Add meg a neved. (2-7) karakter hosszúságban: ")
-            if nev not in nevek:
-                nevek.append(nev)
-            else:
+            if not 2 <= len(nev) <= 7:
+                print("Túl rövid vagy hosszú nevet adtál meg")
+                continue
+            if  nev in nevek:
                 print("EZT MÁR MEGADTAD")
+                continue
+            nevek.append(nev)
         return nevek
-
-
-    def letesz(self, alakzat):
-        '''Bábuk letevése'''
-        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
+    
+    def ellentet(self, alakzat: str) -> dict:
         ellentet = dict()
         if alakzat == "X":
             ellentet["X"] = "O"
         else:
             ellentet["O"] = "X"
+        return ellentet[alakzat]
+
+
+    def letesz(self, alakzat: str) -> None:
+        '''Bábuk letevése'''
+        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
+
 
         while True:
             elemek = []
@@ -94,7 +101,7 @@ class Tabla:
                     elemek.append(self.tabla[y + y_irany][x + x_irany])
 
             # ŐR 3: Öngyilkos lépés ellenőrzése
-            if elemek.count(ellentet[alakzat]) == len(elemek):
+            if elemek.count(self.ellentet(alakzat)) == len(elemek):
                 print("Ez egy öngyilkos lépés, tegyél máshová")
                 continue  # Kezdjük újra a ciklust
 
@@ -103,9 +110,25 @@ class Tabla:
             self.tabla[y][x] = alakzat
             break  # Kilépünk a (while True) ciklusból
 
-    def levesz(self):
+    def levesz(self, alakzat):
         '''Leveszi az élettelen objektumokat'''
-        pass
+        objektumok = self.objektumszelektalo(self.ellentet(alakzat))
+
+        iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
+        melletti = dict()
+        for objektum in objektumok:
+            melletti[objektum] = []
+            el = False
+            for x_irany, y_irany in iranyok:
+                for x, y in objektum:
+                    if (0 <= (x_irany + x) <= 9 and 0 <= (y_irany + y) <= 9):
+                        if self.tabla[y + y_irany][x + x_irany] == ".":
+                            el = True
+                            break
+        
+        
+
+
 
 
 
@@ -117,10 +140,11 @@ gotabla = Tabla()
 gotabla.jatekosok = gotabla.nevbeker()
 os.system("clear") | os.system("cls")
 while True:
-    for i in range(2):
-        print(gotabla.jatekosok[i])
+    for alakzat in gotabla.alakzatok:
+        print(gotabla.jatekosok[gotabla.alakzatok.index(alakzat)])
         print(gotabla.kiir())
-        gotabla.letesz(gotabla.alakzatok[i])
+        gotabla.letesz(alakzat)
+        gotabla.levesz(alakzat)
         # os.system("clear") | os.system("cls")
 
 
