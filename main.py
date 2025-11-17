@@ -75,7 +75,11 @@ class Tabla:
     def letesz(self, alakzat: str) -> None:
         '''Bábuk letevése'''
         while True:
-            x, y = map(int, input("Add meg a koordinátákat space-el elválasztva: ").split())
+            try:
+                x, y = map(int, input("Add meg a koordinátákat space-el elválasztva: ").split())
+            except ValueError:
+                print("Helytelen bemenet. Két számot adj meg szóközzel elválasztva.")
+                continue
 
             # ŐR 1: Tartományon kívüli koordináták
             if not self.tartomany(x, y):
@@ -87,17 +91,31 @@ class Tabla:
                 print("IDE MÁR TETTEK")
                 continue  # Kezdjük újra a ciklust
 
-        # javítás alatt a függvény
+            self.tabla[y][x] = alakzat
+            volt_levetel = self.levesz(self.ellentet(alakzat))
+            sajat_objektumok = self.objektumszelektalo(alakzat)
+
+            sajat_csoport_lelegzik = False
+            for csoport in sajat_objektumok:
+                if (x, y) in csoport:
+                    szomszedok = self.mellettekord(csoport)
+                    if any(self.tabla[ny][nx] == "." for nx, ny in szomszedok):
+                        sajat_csoport_lelegzik = True # Igen, van levegője!
+                    break
+
+            if not sajat_csoport_lelegzik and not volt_levetel:
+                print("Ez egy öngyilkos lépés, tegyél máshová")
+                self.tabla[y][x] = "."
+                continue  
+
+            break
+
 
     def levesz(self, alakzat: str) -> bool:
         '''Leveszi az élettelen objektumokat'''
-        objektumok = self.objektumszelektalo(self.ellentet(alakzat))
         volt_levetel = False
-        for objektum in objektumok:
-            szomszedok = self.mellettekord(objektum)
-
-            van_mellette = any(self.tabla[y][x] == "." for x, y in szomszedok)
-            if not van_mellette:
+        for objektum in self.objektumszelektalo(alakzat):
+            if not any(self.tabla[y][x] == "." for x, y in self.mellettekord(objektum)):
                 for x, y in objektum:
                     self.tabla[y][x] = "."
                 volt_levetel = True
@@ -125,7 +143,7 @@ def main():
             print(gotabla.jatekosok[gotabla.alakzatok.index(alakzat)])
             print(gotabla.kiir())
             gotabla.letesz(alakzat)
-            # clear()
+            clear()
 
 
 if __name__ == "__main__":
