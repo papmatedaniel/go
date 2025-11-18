@@ -1,6 +1,13 @@
 import os
 
 
+def clear():
+    if os.name == "nt":      # Windows
+        os.system("cls")
+    else:                    # Linux, macOS, stb.
+        os.system("clear")
+
+
 class Tabla:
 
     def __init__(self) -> None:
@@ -10,13 +17,28 @@ class Tabla:
         self.iranyok = [(0,1), (0,-1), (-1, 0), (1, 0)]
 
     def kiir(self) -> None:
-        '''Kinyomtatja a tablat'''
-        print(" ", end=" ")
+        """Kinyomtatja a táblát színesen"""
+
+        PIROS = "\033[91m"
+        KEK = "\033[94m"
+        RESET = "\033[0m"
+
+        print("  ", end=" ")
         for i in range(10):
             print(i, end=" ")
         print()
-        for index in range(len(self.tabla)):
-            print(index, *self.tabla[index])
+
+        for index, sor in enumerate(self.tabla):
+            print(index, end=" ")
+            for cell in sor:
+                if cell == "X":
+                    print(f"{PIROS}X{RESET}", end=" ")
+                elif cell == "O":
+                    print(f"{KEK}O{RESET}", end=" ")
+                else:
+                    print(cell, end=" ")
+            print()
+
 
 
     def mellettekord(self, halmaz: set[tuple[int, int]]) -> set[tuple[int, int]]:
@@ -123,16 +145,6 @@ class Tabla:
 
         
 
-
-def clear():
-    if os.name == "nt":      # Windows
-        os.system("cls")
-    else:                    # Linux, macOS, stb.
-        os.system("clear")
-
-
-
-
 def main():
     '''Fő játékciklus'''
     gotabla = Tabla()
@@ -144,6 +156,9 @@ def main():
             print(gotabla.kiir())
             gotabla.letesz(alakzat)
             clear()
+
+
+
 
 
 if __name__ == "__main__":
